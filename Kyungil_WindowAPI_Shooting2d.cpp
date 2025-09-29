@@ -197,7 +197,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     break;
     //키보드 입력처리
-    while (true) {
     case WM_KEYDOWN:
         switch (wParam) //wParam의 역할 : 키보드 입력, 마우스 버튼, 휠 버튼, 가상키코드
         {
@@ -212,7 +211,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_ESCAPE:
             DestroyWindow(hWnd);                 //윈도우 종료
         }
-    }
 
     case WM_DESTROY:
         PostQuitMessage(0);
