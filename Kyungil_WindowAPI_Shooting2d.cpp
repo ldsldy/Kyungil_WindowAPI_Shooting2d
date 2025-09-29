@@ -31,7 +31,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: 여기에 코드를 입력합니다.
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
+	
+	// GDI+ 초기화
+	ULONG_PTR Token;                                            // GDI+ 토큰: GDI+ 초기화 및 종료에 사용  
+	Gdiplus::GdiplusStartupInput StartupInput;                  // GDI+ 초기화 구조체
+	Gdiplus::GdiplusStartup(&Token, &StartupInput, nullptr);    // GDI+ 초기화
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -40,7 +44,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // 애플리케이션 초기화를 수행합니다:
 	if (!InitInstance(hInstance, nCmdShow))    //2. 윈도우 실제 생성 및 초기화
-     {
+    {
         return FALSE;
     }
 
@@ -58,6 +62,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+
+	Gdiplus::GdiplusShutdown(Token); // GDI+ 종료
 
     return (int) msg.wParam;
 }
@@ -139,30 +145,75 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // 메뉴 선택을 구문 분석합니다:
+        switch (wmId)
         {
-            int wmId = LOWORD(wParam);
-            // 메뉴 선택을 구문 분석합니다:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
+
     case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);                                //hdc : handle to device context => 그리기 도구(펜, 브러시 등)와 그리기 대상(화면, 메모리 등)을 관리하는 구조체
+        // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+        Gdiplus::Graphics GraphicsInstance(hdc);                        //GDI+ 그래픽스 객체 생성
+
+        Gdiplus::SolidBrush RedBrush(Gdiplus::Color(255, 255, 0, 0));   //빨간색 브러시 객체 생성(A,R,G,B) 반투명 처리: Alpha 값과 뒷배경색이 섞이는 원리
+        Gdiplus::SolidBrush BlueBrush(Gdiplus::Color(255, 0, 0, 255));
+        Gdiplus::SolidBrush BlackBrush(Gdiplus::Color(255, 0, 0, 0));
+
+        Gdiplus::Pen BlackPen(Gdiplus::Color(255, 0, 0, 0), 3);         //검은색 펜 객체 생성(색상, 두께)
+
+        GraphicsInstance.FillEllipse(&RedBrush, 200, 50, 60, 60);       //타원형 채우기(브러시, x, y, width, height)
+
+        //1. 파란색 원 그리기
+        GraphicsInstance.FillEllipse(&BlueBrush, 50, 50, 20, 20);
+
+        //2. 집 그리기
+        Gdiplus::Point House[] = { Gdiplus::Point(100,100), Gdiplus::Point(50,150) ,Gdiplus::Point(150,150) };
+        GraphicsInstance.FillPolygon(&BlackBrush, House, 3);             //다각형 채우기(브러시, 점 배열, 점 개수)
+        GraphicsInstance.DrawRectangle(&BlackPen, 75, 140, 50, 50);
+
+        //3.커브
+        Gdiplus::Point CurvePoints[] = { Gdiplus::Point(200, 100), Gdiplus::Point(250, 150), Gdiplus::Point(300, 100) };
+        GraphicsInstance.DrawCurve(&BlackPen, CurvePoints, 3, 0.5f);      //커브 그리기(펜, 점 배열, 점 개수, 긴급도)
+
+        //4.Pie
+        Gdiplus::Rect PieRect(300, 50, 50, 50);
+        GraphicsInstance.FillPie(&BlueBrush, PieRect, 0.0f, 220.0f); //파이 조각 채우기(브러시, 사각형, 시작각도, 스윕각도)
+
+        EndPaint(hWnd, &ps);
+    }
+    break;
+    //키보드 입력처리
+    while (true) {
+    case WM_KEYDOWN:
+        switch (wParam) //wParam의 역할 : 키보드 입력, 마우스 버튼, 휠 버튼, 가상키코드
         {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            EndPaint(hWnd, &ps);
+        case VK_LEFT:                            //왼쪽 화살표 입력 
+            OutputDebugStringW(L"왼쪽키를 눌렀다.");
+            InvalidateRect(hWnd, nullptr, TRUE); //화면 전체를 지우고 다시 그리기, hWnd: 윈도우 핸들, nullptr: 전체 영역, TRUE: 배경 지우기
+            break;
+        case VK_RIGHT:
+            OutputDebugStringW(L"오른쪽키를 눌렀다.");
+            InvalidateRect(hWnd, nullptr, TRUE);
+            break;
+        case VK_ESCAPE:
+            DestroyWindow(hWnd);                 //윈도우 종료
         }
-        break;
+    }
+
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -171,6 +222,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+
+//실습
+//1.집모양을 그리고 키보드 입력으로 위아래좌우로 움직이기
+//2.눌르고 있을때 한번만 움직여야 한다.
 
 // 정보 대화 상자의 메시지 처리기입니다.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
