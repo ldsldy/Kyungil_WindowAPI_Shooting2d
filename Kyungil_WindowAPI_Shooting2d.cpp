@@ -15,6 +15,8 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
+
+
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -165,52 +167,92 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);                                //hdc : handle to device context => 그리기 도구(펜, 브러시 등)와 그리기 대상(화면, 메모리 등)을 관리하는 구조체
+        HDC hdc = BeginPaint(hWnd, &ps);                                //hdc : handle to device context => 그리기 도구(펜, 브러시 등)와 그리기 대상(화면, 메모리 등)을 관리하는 구조체, hWnd의 역할: 어떤 윈도우에 그릴지
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
         Gdiplus::Graphics GraphicsInstance(hdc);                        //GDI+ 그래픽스 객체 생성
 
-        Gdiplus::SolidBrush RedBrush(Gdiplus::Color(255, 255, 0, 0));   //빨간색 브러시 객체 생성(A,R,G,B) 반투명 처리: Alpha 값과 뒷배경색이 섞이는 원리
-        Gdiplus::SolidBrush BlueBrush(Gdiplus::Color(255, 0, 0, 255));
-        Gdiplus::SolidBrush BlackBrush(Gdiplus::Color(255, 0, 0, 0));
-
         Gdiplus::Pen BlackPen(Gdiplus::Color(255, 0, 0, 0), 3);         //검은색 펜 객체 생성(색상, 두께)
+        Gdiplus::SolidBrush BlackBrush(Gdiplus::Color(255, 0, 0, 0));    //검은색 브러쉬 객체 생성(색상, 두께)
+        Gdiplus::Point Position[g_HouseVertexCount];
+        for (int i = 0; i < g_HouseVertexCount; i++)
+        {
+            Position[i] = g_HousePosition + g_HouseVertex[i];
+        }
 
-        GraphicsInstance.FillEllipse(&RedBrush, 200, 50, 60, 60);       //타원형 채우기(브러시, x, y, width, height)
-
-        //1. 파란색 원 그리기
-        GraphicsInstance.FillEllipse(&BlueBrush, 50, 50, 20, 20);
-
-        //2. 집 그리기
-        Gdiplus::Point House[] = { Gdiplus::Point(100,100), Gdiplus::Point(50,150) ,Gdiplus::Point(150,150) };
-        GraphicsInstance.FillPolygon(&BlackBrush, House, 3);             //다각형 채우기(브러시, 점 배열, 점 개수)
-        GraphicsInstance.DrawRectangle(&BlackPen, 75, 140, 50, 50);
-
-        //3.커브
-        Gdiplus::Point CurvePoints[] = { Gdiplus::Point(200, 100), Gdiplus::Point(250, 150), Gdiplus::Point(300, 100) };
-        GraphicsInstance.DrawCurve(&BlackPen, CurvePoints, 3, 0.5f);      //커브 그리기(펜, 점 배열, 점 개수, 긴급도)
-
-        //4.Pie
-        Gdiplus::Rect PieRect(300, 50, 50, 50);
-        GraphicsInstance.FillPie(&BlueBrush, PieRect, 0.0f, 220.0f); //파이 조각 채우기(브러시, 사각형, 시작각도, 스윕각도)
+        ////2. 집 그리기
+        //다각형 채우기(브러시, 점 배열, 점 개수)
+        GraphicsInstance.DrawPolygon(&BlackPen, Position, g_HouseVertexCount);
+        GraphicsInstance.FillPolygon(&BlackBrush, Position, g_HouseVertexCount);
 
         EndPaint(hWnd, &ps);
     }
     break;
+
     //키보드 입력처리
     case WM_KEYDOWN:
+    {
         switch (wParam) //wParam의 역할 : 키보드 입력, 마우스 버튼, 휠 버튼, 가상키코드
         {
         case VK_LEFT:                            //왼쪽 화살표 입력 
-            OutputDebugStringW(L"왼쪽키를 눌렀다.");
-            InvalidateRect(hWnd, nullptr, TRUE); //화면 전체를 지우고 다시 그리기, hWnd: 윈도우 핸들, nullptr: 전체 영역, TRUE: 배경 지우기
+            if (!g_KeyWasPressedMap[static_cast<InputDirection>(wParam)])
+            {
+                g_KeyWasPressedMap[static_cast<InputDirection>(wParam)] = true;
+                OutputDebugStringW(L"왼쪽키를 눌렀다.");
+                g_HousePosition.X -= 10;
+                InvalidateRect(hWnd, nullptr, TRUE); //화면 전체를 지우고 다시 그리기, hWnd: 윈도우 핸들, nullptr: 전체 영역, TRUE: 배경 지우기
+            }
+
             break;
         case VK_RIGHT:
-            OutputDebugStringW(L"오른쪽키를 눌렀다.");
-            InvalidateRect(hWnd, nullptr, TRUE);
+            if (!g_KeyWasPressedMap[static_cast<InputDirection>(wParam)])
+            {
+                g_KeyWasPressedMap[static_cast<InputDirection>(wParam)] = true;
+                OutputDebugStringW(L"오른쪽키를 눌렀다.");
+                g_HousePosition.X += 10;
+                InvalidateRect(hWnd, nullptr, TRUE);
+            }
+            break;
+        case VK_UP:
+            if (!g_KeyWasPressedMap[static_cast<InputDirection>(wParam)])
+            {
+                g_KeyWasPressedMap[static_cast<InputDirection>(wParam)] = true;
+                OutputDebugStringW(L"위쪽키를 눌렀다.");
+                g_HousePosition.Y -= 10;
+                InvalidateRect(hWnd, nullptr, TRUE);
+            }
+            break;
+        case VK_DOWN:
+            if (!g_KeyWasPressedMap[static_cast<InputDirection>(wParam)])
+            {
+                g_KeyWasPressedMap[static_cast<InputDirection>(wParam)] = true;
+                OutputDebugStringW(L"아래쪽키를 눌렀다.");
+                g_HousePosition.Y += 10;
+                InvalidateRect(hWnd, nullptr, TRUE);
+            }
             break;
         case VK_ESCAPE:
-            DestroyWindow(hWnd);                 //윈도우 종료
+            DestroyWindow(hWnd);  //윈도우 종료
         }
+    }
+    break;
+
+    case WM_KEYUP:
+    {
+        g_KeyWasPressedMap[static_cast<InputDirection>(wParam)] = false;
+    case VK_LEFT:
+        OutputDebugStringW(L"왼쪽키를 땟다.");
+        break;
+    case VK_RIGHT:
+        OutputDebugStringW(L"오른쪽키를 땟다.");
+        break;
+    case VK_UP:
+        OutputDebugStringW(L"위쪽키를 땟다.");
+        break;
+    case VK_DOWN:
+        OutputDebugStringW(L"아래쪽키를 땟다.");
+        break;
+    }
+    break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
