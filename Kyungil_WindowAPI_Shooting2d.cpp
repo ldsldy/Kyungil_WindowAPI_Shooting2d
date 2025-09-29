@@ -45,6 +45,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	Gdiplus::GdiplusStartupInput StartupInput;                  // GDI+ 초기화 구조체
 	Gdiplus::GdiplusStartup(&Token, &StartupInput, nullptr);    // GDI+ 초기화
 
+    g_KeyWasPressedMap[InputDirection::Left] = false;
+    g_KeyWasPressedMap[InputDirection::Right] = false;
+    g_KeyWasPressedMap[InputDirection::Up] = false;
+    g_KeyWasPressedMap[InputDirection::Down] = false;
+
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_KYUNGILWINDOWAPISHOOTING2D, szWindowClass, MAX_LOADSTRING);
@@ -123,7 +128,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass,szTitle,                   //szTile : 윈도우 타이틀 => 변경 L("string"),
 	   WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,        //윈도우 스타일, WS_OVERLAPPEDWINDOW : 일반적인 윈도우 스타일, WS_MAXIMIZEBOX : 최대화 버튼, WS_THICKFRAME : 크기 조절 가능한 테두리
        200, 100,                        //시작 좌표(스크린 좌표계)      //CW_USEDEFAULT :윈도우 위치와 크기 자동설정
-       400, 300,                        //크기 
+       800, 600,                        //크기 
        nullptr, nullptr, hInstance, nullptr);        
                                        
 
