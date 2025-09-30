@@ -15,9 +15,11 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
+//화면 설정용 전역변수
 Gdiplus::Point g_AppPosition(200, 100);
 Gdiplus::Point g_ScreenSize(800, 600);
 
+//드로우 실습용 전역변수
 Gdiplus::Point g_HousePosition(100, 100);
 constexpr int g_HouseVertexCount = 7;
 const Gdiplus::Point g_HouseVertex[g_HouseVertexCount] =
@@ -26,8 +28,13 @@ const Gdiplus::Point g_HouseVertex[g_HouseVertexCount] =
 };
 std::unordered_map<InputDirection, bool> g_KeyWasPressedMap;
 
+//버퍼 관련 전역변수
 Gdiplus::Bitmap* g_BackBuffer = nullptr;          //더블 버퍼링용 백버퍼
 Gdiplus::Graphics* g_BackBufferGraphics = nullptr; //백버퍼 그랙픽스 객체
+
+Gdiplus::Bitmap* g_PlayerImage = nullptr;  //플레이어용 버퍼
+constexpr int PlayerImageWidth = 48;
+constexpr int PlayerImageHeight = (int)(PlayerImageWidth * 1.5f);
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -177,8 +184,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_BackBufferGraphics = Gdiplus::Graphics::FromImage(g_BackBuffer); //백버퍼용 그래픽스 객체 생성
         if (!g_BackBufferGraphics)
         {
-            //
 			MessageBox(hWnd, L"백 버퍼 그래픽스 생성 실패", L"오류", MB_OK | MB_ICONERROR); //오류 메시지 출력, MB_OK : 확인 버튼, MB_ICONERROR : 오류 아이콘
+        }
+
+        g_PlayerImage = new Gdiplus::Bitmap(L"./Images/Player.png");
+		if (g_PlayerImage->GetLastStatus() != Gdiplus::Ok) //GdiPlus::Ok : 정상 상태
+        {
+            //정상적으로 이미지 로드 실패
+            delete g_PlayerImage;
+            g_PlayerImage = nullptr;
+            MessageBox(hWnd, L"플레이어 이미지 생성 실패", L"오류", MB_OK | MB_ICONERROR); //오류 메시지 출력, MB_OK : 확인 버튼, MB_ICONERROR : 오류 아이콘
         }
         break;
     }
@@ -186,10 +201,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     //윈도우가 종료될때 호출
     case WM_DESTROY: 
     {
+		//플레이어 이미지 버퍼 삭제
+        delete g_PlayerImage;
+		g_PlayerImage = nullptr;
+
+        //백버퍼 관련 버퍼 삭제
         delete g_BackBufferGraphics;
         g_BackBufferGraphics = nullptr;
         delete g_BackBuffer;
         g_BackBuffer = nullptr;
+
 		PostQuitMessage(0); //윈도우 종료 메시지
         break;
 	}
@@ -244,9 +265,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             g_BackBufferGraphics->FillPolygon(&WhiteBrush, Position, g_HouseVertexCount);
 
+            if (g_PlayerImage)
+            {
+                g_BackBufferGraphics->DrawImage(
+                    g_PlayerImage,  //그려질 이미지
+                    100, 100,       //그려질 위치
+                    PlayerImageWidth, PlayerImageHeight);  //그려질 사이즈
+            }
+            else
+            {
+                //플레이어가 없으면 원으로 대체
+                g_BackBufferGraphics->FillEllipse(&RedBrush, 100, 100, PlayerImageWidth, PlayerImageHeight);
+            }
 			Gdiplus::Graphics GraphicsInstance(hdc); //GDI+ 그래픽스 객체 생성
             GraphicsInstance.DrawImage(g_BackBuffer, 0, 0);
         }
+
         EndPaint(hWnd, &ps);
     }
     break;
