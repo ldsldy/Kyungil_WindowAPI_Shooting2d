@@ -18,6 +18,9 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름�
 HWND g_hMainWindow = nullptr;
 
 Player* player;
+Background* background;
+
+float DeltaTime = 0.0f;
 
 //화면 설정용 전역변수
 Gdiplus::Point g_AppPosition(200, 100);
@@ -58,6 +61,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	Gdiplus::GdiplusStartup(&Token, &StartupInput, nullptr);    // GDI+ 초기화
 
 	player = new Player(L"./Images/Player.png");
+    background = new Background(L"./Images/BackGround.png");
+
+    LARGE_INTEGER CurrentTime;
+    LARGE_INTEGER PrevTime;
+    LARGE_INTEGER Frequency;
+    QueryPerformanceCounter(&PrevTime);
+    QueryPerformanceFrequency(&Frequency);
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -73,11 +83,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_KYUNGILWINDOWAPISHOOTING2D));  //h : handle
 
     MSG msg;
-    
+
     //메시지 루프
     //기본 메시지 루프
     while (true)
     {
+        // BOOL QueryPerformanceCounter( LARGE_INTEGER *lpPerformanceCount ); 함수가 호출된 시점의 타이머
+        // BOOL QueryPerformanceFrequency( LARGE_INTEGER *lpFrequency ); 컴퓨터의 초당 진동수
+        QueryPerformanceCounter(&CurrentTime);
+        DeltaTime = static_cast<float>(CurrentTime.QuadPart - PrevTime.QuadPart) / static_cast<float>(Frequency.QuadPart);
+        WCHAR buffer[256];
+        swprintf_s(buffer, L"카운트1 값: %.5f\n", (static_cast<float>(CurrentTime.QuadPart) - static_cast<float>(PrevTime.QuadPart)));
+        OutputDebugStringW(buffer);
+        PrevTime = CurrentTime;
+        
+       
+
         //메시지 큐에 메시지가 있으면 뒤져서 있다면 PM_REMOVE 옵션으로 메시지를 가져옴
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
@@ -90,15 +111,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				DispatchMessage(&msg);
             }
         }
+
+
+
+		InvalidateRect(g_hMainWindow, nullptr, FALSE);
     }
  
+    delete background;
+	background = nullptr;
 	delete player;
 	player = nullptr;
-
+    
     Gdiplus::GdiplusShutdown(Token); // GDI+ 종료
     return (int) msg.wParam;
 }
-
 
 
 //
@@ -241,6 +267,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Gdiplus::SolidBrush YellowBrush(Gdiplus::Color(255, 255, 255, 0));
             Gdiplus::SolidBrush WhiteBrush(Gdiplus::Color(255, 255, 255, 255));
 
+			background->Render(g_BackBufferGraphics);
+
             for (int y = 0; y < 13; y++)
             {
                 for (int x = 0; x < 17; x++)
@@ -249,19 +277,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-            //    Gdiplus::Point Position[g_HouseVertexCount];
-            //    for (int i = 0; i < g_HouseVertexCount; i++)
-            //    {
-            //        Position[i] = g_HousePosition + g_HouseVertex[i];
-            //    }
-            //    g_BackBufferGraphics->FillPolygon(&WhiteBrush, Position, g_HouseVertexCount);
-
             player->Render(g_BackBufferGraphics);
 
             Gdiplus::Graphics GraphicsInstance(hdc); //GDI+ 그래픽스 객체 생성
             GraphicsInstance.DrawImage(g_BackBuffer, 0, 0);
-
-            player->Render(&GraphicsInstance);
         }
         EndPaint(hWnd, &ps);
     }

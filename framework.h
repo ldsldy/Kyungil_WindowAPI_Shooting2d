@@ -19,3 +19,4 @@
 #include <tchar.h>
 #include <map>
 #include <unordered_map>
+#include <string>

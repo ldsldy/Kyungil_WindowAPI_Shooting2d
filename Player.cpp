@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "string"
 
 Player::Player(const wchar_t* InImagePath)
 {
@@ -32,6 +33,10 @@ Player::~Player()
 
 void Player::Render(Gdiplus::Graphics* InGraphics)
 {
+    /*WCHAR buffer[256];
+    swprintf_s(buffer, L"플레이어 델타타임 값: %.5f\n", DeltaTime);
+    OutputDebugStringW(buffer);*/
+
     if (Image)
     {
         InGraphics->DrawImage(
@@ -44,7 +49,10 @@ void Player::Render(Gdiplus::Graphics* InGraphics)
     {
         //플레이어가 없으면 원으로 대체
         Gdiplus::SolidBrush RedBrush(Gdiplus::Color(255, 255, 0, 0));
-        InGraphics->FillEllipse(&RedBrush, 100, 100, PixelWidth, PixelHeight);
+        InGraphics->FillEllipse(&RedBrush, 
+            static_cast<int>(Position.X - PixelWidth * Pivot.X),
+            static_cast<int>(Position.Y - PixelHeight * Pivot.Y), 
+            PixelWidth, PixelHeight);
     }
 }
 
@@ -57,24 +65,21 @@ void Player::HandleKeyState(WPARAM InKey, bool InIsPressed)
 
         if (InKey == VK_LEFT)
         {
-            Position.X -= Speed;
+            Position.X -= Speed * DeltaTime;
             if (Position.X < PixelWidth)
             {
                 Position.X = static_cast<float>(g_ScreenSize.X - PixelWidth);
                 //Position.X = static_cast<float>(0 + PixelWidth);
             }
-            //화면 전체를 지우고 다시 그리기, hWnd: 윈도우 핸들, nullptr: 전체 영역, TRUE: 배경 지우기(FALSE: 배경 안 지우기)
-            InvalidateRect(g_hMainWindow, nullptr, FALSE);
         }
         else if(InKey == VK_RIGHT)
         {
-            Position.X += Speed;
+            Position.X += Speed * DeltaTime;
             if (g_ScreenSize.X - PixelWidth < Position.X)
             {
                 Position.X = static_cast <float>(PixelWidth);
                 //Position.X = static_cast <float>(g_ScreenSize.X - PixelWidth);
             }
-            InvalidateRect(g_hMainWindow, nullptr, FALSE);
 		}
     }
 }
