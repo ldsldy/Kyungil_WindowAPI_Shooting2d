@@ -30,7 +30,7 @@ void Background::Render(Gdiplus::Graphics* InGraphics)
 	swprintf_s(buffer, L"배경 델타타임 값: %.5f\n", DeltaTime);
 	OutputDebugStringW(buffer);*/
 
-	DrawPositionX -= 100.0f * DeltaTime;
+	DrawPositionX -= 100.0f /** DeltaTime*/;
 	if (DrawPositionX < 0)
 	{
 		DrawPositionX = g_ScreenSize.X;

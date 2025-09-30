@@ -91,13 +91,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         // BOOL QueryPerformanceCounter( LARGE_INTEGER *lpPerformanceCount ); 함수가 호출된 시점의 타이머
         // BOOL QueryPerformanceFrequency( LARGE_INTEGER *lpFrequency ); 컴퓨터의 초당 진동수
         QueryPerformanceCounter(&CurrentTime);
-        DeltaTime = static_cast<float>(CurrentTime.QuadPart - PrevTime.QuadPart) / static_cast<float>(Frequency.QuadPart);
-        WCHAR buffer[256];
-        swprintf_s(buffer, L"카운트1 값: %.5f\n", (static_cast<float>(CurrentTime.QuadPart) - static_cast<float>(PrevTime.QuadPart)));
-        OutputDebugStringW(buffer);
+        DeltaTime = static_cast<float>
+            (CurrentTime.QuadPart - PrevTime.QuadPart) / static_cast<float>(Frequency.QuadPart);
         PrevTime = CurrentTime;
-        
-       
+        if (DeltaTime < 0.016f)
+        {
+            DeltaTime = 0.016f;
+        }
 
         //메시지 큐에 메시지가 있으면 뒤져서 있다면 PM_REMOVE 옵션으로 메시지를 가져옴
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -111,8 +111,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				DispatchMessage(&msg);
             }
         }
-
-
 
 		InvalidateRect(g_hMainWindow, nullptr, FALSE);
     }
