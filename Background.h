@@ -1,27 +1,23 @@
 #pragma once
-#include <windows.h>
-#include <gdiplus.h>
+#include "Actor.h"
 
-extern HWND g_hMainWindow;
-extern Gdiplus::Point g_ScreenSize;
-extern float DeltaTime;
-
-class Background
+class Background : public Actor
 {
 public:
 	Background() = delete;
-	Background(const wchar_t* InPath);
-	~Background();
+	Background(ResourceID InID);
 
-	inline float GetDrawPositionX() const { return DrawPositionX; }
-	inline void SetDrawPositionX(float InX) { DrawPositionX = InX; }
+	virtual void OnTick(float InDeltaTime) override;
+	virtual void OnRender(Gdiplus::Graphics* InGraphics) override;
 
-	void Render(Gdiplus::Graphics* InGraphics);
 private:
-	Gdiplus::Bitmap* Image = nullptr;
-	int ImageWidth = 0;
-	int ImageHeight = 0;
+	int MapWidth;
+	int MapHeight;
 
-	float DrawPositionX = 0.0f;
+	//스크롤 속도
+	//float ScrollSpeed = 50.0f;
+	
+	//스크롤 오프셋 값
+	//float Offset = 0.0f;
 };
 

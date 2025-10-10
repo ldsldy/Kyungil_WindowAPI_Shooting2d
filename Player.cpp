@@ -1,85 +1,106 @@
 #include "Player.h"
-#include "string"
+#include "Common.h"
+#include "GameManager.h"
 
-Player::Player(const wchar_t* InImagePath)
+void Player::OnInitialize()
 {
     Position.X = 300.0f;
     Position.Y = 700.0f;
-    
-    KeyWasPressedMap[InputDirection::Left] = false;
-    KeyWasPressedMap[InputDirection::Right] = false;
+
+    WidthSize = (Image->GetWidth())/3;
+	HeightSize = (Image->GetHeight())/3;
+
     KeyWasPressedMap[InputDirection::Up] = false;
     KeyWasPressedMap[InputDirection::Down] = false;
+    KeyWasPressedMap[InputDirection::Left] = false;
+    KeyWasPressedMap[InputDirection::Right] = false;
+
+    PhysicsComponent* physicsComponent = new PhysicsComponent(this, CollisionType::Circle, PhysicsLayer::Player);
+	//가능하면 Ellipse로 바꾸기
+    physicsComponent->SetRadius(static_cast<float>(HeightSize * 0.5f));
+    AddComponent(physicsComponent);
+}
+
+void Player::OnTick(float InDeltaTime)
+{
+    float MoveDistance = InDeltaTime * Speed;
+    if (KeyWasPressedMap[InputDirection::Left])
+    {
+        Position.X -= MoveDistance;
+    }
+    if (KeyWasPressedMap[InputDirection::Right])
+    {
+        Position.X += MoveDistance;
+	}
+    if (KeyWasPressedMap[InputDirection::Up])
+    {
+        Position.Y -= MoveDistance;
+    }
+
+    if (Position.X < (0 - WidthSize * 0.5f))
+    {
+        Position.X = 0;
+    }
+    else if ((GameManager::ScreenWidth + WidthSize * 0.5f) < Position.X)
+    {
+        Position.X= GameManager::ScreenWidth + WidthSize * 0.5f;
+    }
+    //y가 0아래면 사망판정 추가
+}
+void Player::OnRender(Gdiplus::Graphics* InGraphics)
+{
+    if (!InGraphics) return;
+    if (!Image) return;
+
+    //현재 변환 상태 저장
+    Gdiplus::Matrix oldTransform;
+    InGraphics->GetTransform(&oldTransform);
+
+    //회전 중심점을 객체의 중심으로 설정
+    InGraphics->TranslateTransform(Position.X, Position.Y);
+
+    //지정된 각도만큼 회전
+    InGraphics->RotateTransform(Angle);
+
+    InGraphics->TranslateTransform(-Position.X, -Position.Y); //원래 위치로 다시 이동
+
+    //Image가 로딩되어 있다.
+    InGraphics->DrawImage(
+        Image,
+        static_cast<int>(Position.X - WidthSize * Pivot.X), //그려질 위치
+        static_cast<int>(Position.Y - HeightSize * Pivot.Y),
+        WidthSize, HeightSize); //그려질 사이즈
+
+    //이전 변환 상태로 복원
+    InGraphics->SetTransform(&oldTransform);
     
-    Image = new Gdiplus::Bitmap(InImagePath);
-    if (Image->GetLastStatus() != Gdiplus::Ok) //GdiPlus::Ok : 정상 상태
+    //부모의 OnRender이후 추가 동작
+    if (!Image)
     {
-        //정상적으로 이미지 로드 실패
-        delete Image;
-        Image = nullptr;
-		OutputDebugString(L"플레이어 이미지 생성 실패\n");
-        MessageBox(g_hMainWindow, L"플레이어 이미지 생성 실패", L"오류", MB_OK | MB_ICONERROR); //오류 메시지 출력, MB_OK : 확인 버튼, MB_ICONERROR : 오류 아이콘
-    }
-}
-Player::~Player()
-{
-    if(Image)
-    { 
-        //플레이어 이미지 버퍼 삭제
-        delete Image;
-        Image = nullptr;
-    }
-}
-
-void Player::Render(Gdiplus::Graphics* InGraphics)
-{
-    /*WCHAR buffer[256];
-    swprintf_s(buffer, L"플레이어 델타타임 값: %.5f\n", DeltaTime);
-    OutputDebugStringW(buffer);*/
-
-    if (Image)
-    {
-        InGraphics->DrawImage(
-            Image,  //그려질 이미지
-            static_cast<int>(Position.X-PixelWidth*Pivot.X), 
-            static_cast<int>(Position.Y-PixelHeight*Pivot.Y),       //그려질 위치
-            PixelWidth, PixelHeight);  //그려질 사이즈
-    }
-    else
-    {
-        //플레이어가 없으면 원으로 대체
         Gdiplus::SolidBrush RedBrush(Gdiplus::Color(255, 255, 0, 0));
-        InGraphics->FillEllipse(&RedBrush, 
-            static_cast<int>(Position.X - PixelWidth * Pivot.X),
-            static_cast<int>(Position.Y - PixelHeight * Pivot.Y), 
-            PixelWidth, PixelHeight);
+        InGraphics->FillEllipse(
+            &RedBrush,
+            static_cast<int>(Position.X - WidthSize * Pivot.X),
+            static_cast<int>(Position.Y - HeightSize * Pivot.Y),
+            WidthSize, HeightSize);
     }
 }
+
+void Player::OnOverlap(Actor* InOther)
+{
+    OutputDebugString(L"Player::OnOverlap called\n");
+    if (InOther && InOther != this)
+    {
+        //게임 오버 처리 -> hp-1로 변경(예정)
+        GameManager::Get().SetGameState(GameState::GameOver);
+    }
+}
+
 
 void Player::HandleKeyState(WPARAM InKey, bool InIsPressed)
 {
-    InputDirection Direction;
-    if (InKey == VK_LEFT || InKey == VK_RIGHT)
+    if (InKey == VK_LEFT || InKey == VK_RIGHT||InKey == VK_UP)
     {
         KeyWasPressedMap[static_cast<InputDirection>(InKey)] = InIsPressed;
-
-        if (InKey == VK_LEFT)
-        {
-            Position.X -= Speed * DeltaTime;
-            if (Position.X < PixelWidth)
-            {
-                Position.X = static_cast<float>(g_ScreenSize.X - PixelWidth);
-                //Position.X = static_cast<float>(0 + PixelWidth);
-            }
-        }
-        else if(InKey == VK_RIGHT)
-        {
-            Position.X += Speed * DeltaTime;
-            if (g_ScreenSize.X - PixelWidth < Position.X)
-            {
-                Position.X = static_cast <float>(PixelWidth);
-                //Position.X = static_cast <float>(g_ScreenSize.X - PixelWidth);
-            }
-		}
     }
 }

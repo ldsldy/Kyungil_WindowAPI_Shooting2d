@@ -1,0 +1,30 @@
+#pragma once
+#include <type_traits>
+#include "Singleton.h"
+#include "enums.h"
+#include "GameManager.h"
+
+//Actor를 생성하는 팩토리 클래스
+class Factory : public Singleton<Factory>
+{
+	friend class Singleton<Factory>;
+
+public:
+	// std::enable_if = std::is_base_of<Actor,T>::value가 true면 T*로 만들어라
+	// std::is_base_of<Actor,T> = Actor가 T타입의 부모냐? 그 결과가 ::value에 들어간다.
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Actor, T>::value, T*>::type
+	SpawnActor(ResourceID InID, RenderLayer InLayer = RenderLayer::Misc)
+	{
+		T* NewActor = new T(InID);
+		NewActor->SetRenderLayer(InLayer);
+		NewActor->OnInitialize();
+		GameManager::Get().RegistActor(InLayer, NewActor);	//GameManager에 등록
+
+		return NewActor;
+	}
+
+private:
+	Factory() = default;
+	virtual ~Factory() = default;
+};
