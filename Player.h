@@ -1,43 +1,32 @@
 #pragma once
 #include <unordered_map>
-#include <windows.h>
-#include <gdiplus.h>
 #include "enums.h"
+#include "Actor.h"
 
-//extern : 뒤에 있는 변수가 다른 파일에 선언이 되어 있다.
-extern HWND g_hMainWindow;
-extern Gdiplus::Point g_ScreenSize;
-
-using PointF = Gdiplus::PointF;
-class Player
+class Player : public Actor
 {
 public:
 	Player() = delete;
-	Player(const wchar_t* InImagePath);
-	~Player();
+	Player(ResourceID InID) : Actor(InID) {};
 
-	void Render(Gdiplus::Graphics* InGraphics);
+	virtual void OnInitialize() override;
+	virtual void OnTick(float InDeltaTime) override;
+	virtual void OnRender(Gdiplus::Graphics* InGraphics) override;
+	virtual void OnOverlap(Actor* InOther) override;
 
 	void HandleKeyState(WPARAM InKey, bool InIsPressed);
 
+	inline float GetSpeed() const { return Speed; }
+	inline void SetSpeed(float InSpeed) { Speed = InSpeed; }
+
 private:
 	//플레이어 이동 속도
-	float Speed = 10.0f; 
+	float Speed = 200.0f;
+
+	int WidthSize = 64;
+	int HeightSize = 64;
 
 	//플레이어 키 입력 상태
 	std::unordered_map<InputDirection, bool> KeyWasPressedMap;
-	
-	//플레이어 이미지가 들어있을 비트맵
-	Gdiplus::Bitmap* Image = nullptr;  //플레이어용 버퍼
-	
-	//플레이어 크기
-	static constexpr int PixelWidth = 48;
-	static constexpr int PixelHeight = (int)(PixelWidth * 1.5f);
-
-	//플레이어의 중심점
-	PointF Pivot = {0.5f, 0.5f}; //Pivot 기본 값은 한가운데
-
-	//플레이어 위치
-	PointF Position = { 0.0f, 0.0f };
 };
 

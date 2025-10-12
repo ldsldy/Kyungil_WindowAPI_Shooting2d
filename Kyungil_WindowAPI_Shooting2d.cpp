@@ -15,26 +15,6 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
-HWND g_hMainWindow = nullptr;
-
-Player* player;
-
-//화면 설정용 전역변수
-Gdiplus::Point g_AppPosition(200, 100);
-Gdiplus::Point g_ScreenSize(600, 800);
-
-////드로우 실습용 전역변수
-//Gdiplus::Point g_HousePosition(100, 100);
-//constexpr int g_HouseVertexCount = 7;
-//const Gdiplus::Point g_HouseVertex[g_HouseVertexCount] =
-//{
-//    {0,-100}, {50,-50},{30,-50},{30,0},{-30,0},{-30,-50},{-50,-50}
-//};
-
-//버퍼 관련 전역변수
-Gdiplus::Bitmap* g_BackBuffer = nullptr;          //더블 버퍼링용 백버퍼
-Gdiplus::Graphics* g_BackBufferGraphics = nullptr; //백버퍼 그랙픽스 객체
-
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -57,7 +37,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	Gdiplus::GdiplusStartupInput StartupInput;                  // GDI+ 초기화 구조체
 	Gdiplus::GdiplusStartup(&Token, &StartupInput, nullptr);    // GDI+ 초기화
 
-	player = new Player(L"./Images/Player.png");
+    ResourceManager::Get().Initialize(); //게임 매니저보다 먼저 초기화
+	GameManager::Get().Initialize();    //Get() : 싱글톤 인스턴스 접근 (인스턴스를 먼저 얻어야한다)
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -73,7 +54,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_KYUNGILWINDOWAPISHOOTING2D));  //h : handle
 
     MSG msg;
-    
+	ULONGLONG LastTime = GetTickCount64(); //GetTickCount64() : 시스템이 시작된 후 경과된 시간을 밀리초 단위로 반환
+
     //메시지 루프
     //기본 메시지 루프
     while (true)
@@ -90,15 +72,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				DispatchMessage(&msg);
             }
         }
+
+        ULONGLONG CurrentTime = GetTickCount64();
+		float DeltaTime = (CurrentTime - LastTime) / 1000.0f; //초 단위로 변환
+        LastTime = CurrentTime;
+        
+        GameManager::Get().Tick(DeltaTime);
+
+        InvalidateRect(GameManager::Get().GetMainWindowHandle(),
+			nullptr, FALSE); // 윈도우 전체를 무효화, WM_PAINT 메시지를 보냄, FALSE : 배경 지우지 않음
     }
  
-	delete player;
-	player = nullptr;
-
+	GameManager::Get().Destroy();
+	ResourceManager::Get().Destroy();
+    
     Gdiplus::GdiplusShutdown(Token); // GDI+ 종료
     return (int) msg.wParam;
 }
-
 
 
 //
@@ -143,26 +133,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
    //클라이언트 영역 크기를 원하는 크기로 설정
-   RECT rc = { 0,0, g_ScreenSize.X, g_ScreenSize.Y };
+   RECT rc = { 0,0, GameManager::ScreenWidth, GameManager::ScreenHeight };
+   //RECT rc = { 0,0,    GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN) };
 
    AdjustWindowRectEx(&rc,
        WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,
 	   FALSE, 0); //메뉴 없음, 확장 스타일 없음
 
+   const Point StartPosition = GameManager::Get().GetAppPosition();
+
    //실제 윈도우 생성
-   HWND g_hMainWindow = CreateWindowW(szWindowClass,szTitle,                   //szTile : 윈도우 타이틀 => 변경 L("string"),
+   HWND hWnd = CreateWindowW(szWindowClass, L"2D Platformer Game",                   //szTile : 윈도우 타이틀 => 변경 L("string"),
 	   WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,       //윈도우 스타일, WS_OVERLAPPEDWINDOW : 일반적인 윈도우 스타일, WS_MAXIMIZEBOX : 최대화 버튼, WS_THICKFRAME : 크기 조절 가능한 테두리
-       g_AppPosition.X, g_AppPosition.Y,                            //시작 좌표(스크린 좌표계)      //CW_USEDEFAULT :윈도우 위치와 크기 자동설정
+       StartPosition.X, StartPosition.Y,                            //시작 좌표(스크린 좌표계)      //CW_USEDEFAULT :윈도우 위치와 크기 자동설정
        rc.right-rc.left, rc.bottom - rc.top,                       //크기: 윈도우 스타일에 맞춰 재조정
        nullptr, nullptr, hInstance, nullptr);        
                                        
-   if (!g_hMainWindow)
+   if (!hWnd)
    {
       return FALSE;
    }
 
-   ShowWindow(g_hMainWindow, nCmdShow);  //윈도우 출력
-   UpdateWindow(g_hMainWindow);          //윈도우 업데이트(화면 갱신)
+   ShowWindow(hWnd, nCmdShow);  //윈도우 출력
+   UpdateWindow(hWnd);          //윈도우 업데이트(화면 갱신)
 
    return TRUE;
 }
@@ -182,47 +175,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-        //위도우가 생성될때 호출
-    case WM_CREATE:
-    {
-        g_BackBuffer = new Gdiplus::Bitmap(g_ScreenSize.X, g_ScreenSize.Y, PixelFormat32bppARGB); //백버퍼용 비트맵 생성
-        g_BackBufferGraphics = Gdiplus::Graphics::FromImage(g_BackBuffer); //백버퍼용 그래픽스 객체 생성
-        if (!g_BackBufferGraphics)
-        {
-            MessageBox(hWnd, L"백 버퍼 그래픽스 생성 실패", L"오류", MB_OK | MB_ICONERROR); //오류 메시지 출력, MB_OK : 확인 버튼, MB_ICONERROR : 오류 아이콘
-        }
-        break;
-    }
+     //위도우가 생성될때 호출
+    //case WM_CREATE:
+    //{
+    //}
 
     //윈도우가 종료될때 호출
     case WM_DESTROY:
-    {
-        //백버퍼 관련 버퍼 삭제
-        delete g_BackBufferGraphics;
-        g_BackBufferGraphics = nullptr;
-        delete g_BackBuffer;
-        g_BackBuffer = nullptr;
-        PostQuitMessage(0); //윈도우 종료 메시지
+		PostQuitMessage(0); //메시지 루프에 WM_QUIT 메시지를 보냄
         break;
-    }
-
-    case WM_COMMAND:
-    {
-        int wmId = LOWORD(wParam);
-        // 메뉴 선택을 구문 분석합니다:
-        switch (wmId)
-        {
-        case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-            break;
-        case IDM_EXIT:
-            DestroyWindow(hWnd);
-            break;
-        default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
-        }
-    }
-    break;
 
     // 화면 갱신이 필요할때 호출
     case WM_PAINT:
@@ -231,69 +192,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC hdc = BeginPaint(hWnd, &ps); //hdc : handle to device context => 그리기 도구(펜, 브러시 등)와 그리기 대상(화면, 메모리 등)을 관리하는 구조체, hWnd의 역할: 어떤 윈도우에 그릴지
 
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        if (g_BackBufferGraphics)
-        {
-            g_BackBufferGraphics->Clear(Gdiplus::Color(255, 0, 0, 0));
+        GameManager::Get().Render();
+		Gdiplus::Graphics GraphicsInstance(hdc); //hdc에 그리기 위한 도구
+		GraphicsInstance.DrawImage(GameManager::Get().GetBackBuffer(), 0, 0); //백버퍼 이미지를 화면에 그림
 
-            Gdiplus::SolidBrush GreenBrush(Gdiplus::Color(255, 0, 255, 0));
-            Gdiplus::SolidBrush RedBrush(Gdiplus::Color(255, 255, 0, 0));
-            Gdiplus::SolidBrush BlueBrush(Gdiplus::Color(255, 0, 0, 255));
-            Gdiplus::SolidBrush YellowBrush(Gdiplus::Color(255, 255, 255, 0));
-            Gdiplus::SolidBrush WhiteBrush(Gdiplus::Color(255, 255, 255, 255));
-
-            for (int y = 0; y < 13; y++)
-            {
-                for (int x = 0; x < 17; x++)
-                {
-                    g_BackBufferGraphics->FillRectangle(&GreenBrush, 50 + x * 50, 50 + 50 * y, 5, 5);
-                }
-            }
-
-            //    Gdiplus::Point Position[g_HouseVertexCount];
-            //    for (int i = 0; i < g_HouseVertexCount; i++)
-            //    {
-            //        Position[i] = g_HousePosition + g_HouseVertex[i];
-            //    }
-            //    g_BackBufferGraphics->FillPolygon(&WhiteBrush, Position, g_HouseVertexCount);
-
-            player->Render(g_BackBufferGraphics);
-
-            Gdiplus::Graphics GraphicsInstance(hdc); //GDI+ 그래픽스 객체 생성
-            GraphicsInstance.DrawImage(g_BackBuffer, 0, 0);
-
-            player->Render(&GraphicsInstance);
-        }
         EndPaint(hWnd, &ps);
     }
     break;
 
     //화면을 지워야 할 때 호출
     case WM_ERASEBKGND:
-    {
-        return 1;   //배경 지우기 안함.
-    }
+        return 1;   //배경 지우기 안함. (백버퍼 사용 중)
 
     //키보드를 누르면 호출
     case WM_KEYDOWN:
-    {
-        player->HandleKeyState(wParam, true);
+		GameManager::Get().HandleKeyState(wParam, true);
         switch (wParam) //wParam의 역할 : 키보드 입력, 마우스 버튼, 휠 버튼, 가상키코드
         {
         case VK_ESCAPE:
             DestroyWindow(hWnd); //윈도우 종료
         }
-    }
-    break;
-
-    case WM_KEYUP:
-    {
-        player->HandleKeyState(wParam, false);
         break;
-    }
+    case WM_KEYUP:
+		GameManager::Get().HandleKeyState(wParam, false);
+        break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
-        return 0;
     }
+    return 0;
 }
 
 // 정보 대화 상자의 메시지 처리기입니다.
