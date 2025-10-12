@@ -1,6 +1,5 @@
 #pragma once
 #include "Actor.h"
-#include "Factory.h"
 #include "ItemInfo.h"
 #include <vector>
 
@@ -40,11 +39,11 @@ private:
 	//아이템 생성
 	Actor* CreateItemActorWithFactory(const ItemSpawnInfo& InSpawnInfo);
 	void SetupKey(Actor* actor, const ItemSpawnInfo& InSpawnInfo);
-	void SetupGem(Actor* actor,const ItemSpawnInfo& InSpawnInfo);
+	/*void SetupGem(Actor* actor,const ItemSpawnInfo& InSpawnInfo);
 	void SetupJumpBlock(Actor* actor, const ItemSpawnInfo& InSpawnInfo);
 	void SetupKeyBlock(Actor* actor, const ItemSpawnInfo& InSpawnInfo);
 	void SetupFloorBlock(Actor* acto, const ItemSpawnInfo& InSpawnInfo);
-	void SetupExitDoor(Actor* actor, const ItemSpawnInfo& InSpawnInfo);
+	void SetupExitDoor(Actor* actor, const ItemSpawnInfo& InSpawnInfo);*/
 
 private:
 	LevelType CurrentLevelType=LevelType::Level1; //현재 맵의 레벨

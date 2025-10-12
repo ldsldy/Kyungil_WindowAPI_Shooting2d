@@ -7,10 +7,10 @@ void ResourceManager::Initialize()
 	LoadResourceFromFile(ResourceID::Player, L"./Images/Player/Player.png");
 	LoadResourceFromFile(ResourceID::Background, L"./Images/Background/Background.png");
 	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/Bomb.png");
-	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_blue.png");
-	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_green.png");
-	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_red.png");
-	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_yellow.png");
+	LoadResourceFromFile(ResourceID::Key_Blue, L"./Images/Interactable/key_blue.png");
+	LoadResourceFromFile(ResourceID::Key_Green, L"./Images/Interactable/key_green.png");
+	LoadResourceFromFile(ResourceID::Key_Red, L"./Images/Interactable/key_red.png");
+	LoadResourceFromFile(ResourceID::Key_Yellow, L"./Images/Interactable/key_yellow.png");
 	LoadResourceFromFile(ResourceID::Number0, L"./Images/UI/hud0.png");
 	LoadResourceFromFile(ResourceID::Number1, L"./Images/UI/hud1.png");
 	LoadResourceFromFile(ResourceID::Number2, L"./Images/UI/hud2.png");
@@ -22,6 +22,10 @@ void ResourceManager::Initialize()
 	LoadResourceFromFile(ResourceID::Number8, L"./Images/UI/hud8.png");
 	LoadResourceFromFile(ResourceID::Number9, L"./Images/UI/hud9.png");
 	LoadResourceFromFile(ResourceID::Dot, L"./Images/UI/hudX.png");
+	LoadResourceFromFile(ResourceID::UI_Key_Blue, L"./Images/UI/hud_key_blue.png");
+	LoadResourceFromFile(ResourceID::UI_Key_Green, L"./Images/UI/hud_key_green.png");
+	LoadResourceFromFile(ResourceID::UI_Key_Red, L"./Images/UI/hud_key_red.png");
+	LoadResourceFromFile(ResourceID::UI_Key_Yellow, L"./Images/UI/hud_key_yellow.png");
 }
 
 void ResourceManager::Destroy()

@@ -10,6 +10,7 @@ public:
 
 	virtual void OnInitialize() override;
 	virtual void OnTick(float deltaTime) override;
+	virtual void OnRender(Gdiplus::Graphics* InGraphics) override;
 
 	virtual void OnOverlap(Actor* other) override;
 

@@ -4,6 +4,8 @@
 #include "enums.h"
 #include "GameManager.h"
 
+class GameManager;
+
 //Actor를 생성하는 팩토리 클래스
 class Factory : public Singleton<Factory>
 {

@@ -15,14 +15,19 @@ public:
 	virtual void OnRender(Gdiplus::Graphics* InGraphics) override;
 	virtual void OnOverlap(Actor* InOther) override;
 
-	void PickupKey(Key* key); //열쇠와 겹쳤을 때 호출되는 함수
+	// 지면 충돌 처리
+	virtual void OnGroundCollision() override;
+	virtual void OnGroundLeft() override;
 
+	void PickupKey(Key* key); //열쇠와 겹쳤을 때 호출되는 함수
 	void AddKey(int KeyId);
 	bool HasKey(int KeyId);
 	void ResetKeys();
 
 	//키 입력 상태 처리
 	void HandleKeyState(WPARAM InKey, bool InIsPressed);
+	void HandleInput();
+	void UpdateMovement(float InDeltaTime);
 
 	//Getters and Setters
 	inline const std::vector<int>& GetOwnedKeys() const { return OwnedKeys; }
@@ -33,6 +38,7 @@ public:
 private:
 	//플레이어 이동 속도
 	float Speed = 200.0f;
+	float JumpImpulse = 450.0f; //점프 시 가해지는 충격량
 
 	int WidthSize = 64;
 	int HeightSize = 64;

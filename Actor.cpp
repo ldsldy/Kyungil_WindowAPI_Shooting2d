@@ -1,6 +1,7 @@
 #include "Actor.h"
 #include "GameManager.h"
 #include "ResourceManager.h"
+#include "MoveComponent.h"
 
 Actor::Actor(ResourceID InID)
 {

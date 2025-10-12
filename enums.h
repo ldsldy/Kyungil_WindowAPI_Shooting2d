@@ -47,6 +47,10 @@ enum class ResourceID : uint8_t
 	Key_Blue,
 	Key_Yellow,
 	Key_Green,
+	UI_Key_Blue,
+	UI_Key_Yellow,
+	UI_Key_Red,
+	UI_Key_Green,
 	Dot,
 	Test,
 };

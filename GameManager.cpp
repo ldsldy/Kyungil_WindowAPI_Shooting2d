@@ -4,6 +4,9 @@
 #include "ResourceManager.h"
 #include "Factory.h"
 #include "PhysicsComponent.h"
+#include "InteractSpawner.h"
+
+#include <string>
 //#include "TestGridActor.h"
 
 void GameManager::Initialize()
@@ -22,14 +25,14 @@ void GameManager::Initialize()
 	Factory::Get().SpawnActor<Background>(ResourceID::Background, RenderLayer::Background);
 	//TestGrid = Factory::Get().SpawnActor<TestGridActor>(ResourceID::None, RenderLayer::Test);
 
-	ItemSpawner = Factory::Get().SpawnActor<InteractSpawner>(ResourceID::None, RenderLayer::Misc);
-	Timer = Factory::Get().SpawnActor<TimerUI>(ResourceID::None, RenderLayer::UI);
+	ItemSpawner = Factory::Get().SpawnActor<InteractSpawner>(ResourceID::None);
+	KeyInventory = Factory::Get().SpawnActor<KeyInventoryUI>(ResourceID::None, RenderLayer::UI);
 }
 
 void GameManager::Destroy()
 {
 	//생성했던 모든 것들을 정리
-	Timer = nullptr;
+	KeyInventory = nullptr;
 	ItemSpawner = nullptr;
 	MainPlayer = nullptr;
 	//TestGrid = nullptr;
@@ -146,9 +149,6 @@ void GameManager::ProcessCollisions()
 			Key* nkey = dynamic_cast<Key*>(key->GetOwner());
 			if (nkey)
 				MainPlayer->OnOverlap(nkey);
-			//충돌 발생 시 플레이어와 폭탄의 OnOverlap 호출
-	/*		player->GetOwner()->OnOverlap(key->GetOwner());
-			key->GetOwner()->OnOverlap(player->GetOwner());*/
 		}
 	}
 }
@@ -165,4 +165,83 @@ void GameManager::ProcessPendingDestroyActors()
 		}
 	}
 	PendingDestroyActors.clear();
+}
+
+bool GameManager::CheckFloorCollision(const PointF& NextPos, const PointF& velocity, float OutGroundY)
+{
+	PhysicsComponent* player = *(PhysicsComponents[PhysicsLayer::Player].begin()); //플레이어는 1명
+
+	if (!player) return false;
+
+	bool FoundGround = false;
+	float HighestY = NextPos.Y;
+
+	for (auto& floor : PhysicsComponents[PhysicsLayer::FloorBlock])
+	{
+		if (player->IsCollision(floor))
+		{
+			FloorBlock* floorBlock = dynamic_cast<FloorBlock*>(floor->GetOwner());
+			if (floorBlock && floorBlock->CanLandOn(NextPos, velocity))
+			{
+				float GroundY = floorBlock->GetTopY();
+
+				if (!FoundGround || GroundY < HighestY)
+				{
+					FoundGround = true;
+					HighestY = GroundY;
+				}
+			}
+		}
+	}
+	return FoundGround;
+}
+
+void GameManager::LoadNextLevel()
+{
+	if (ItemSpawner)
+	{
+		InteractSpawner::LevelType currentLevel = ItemSpawner->GetCurrentLevel();
+		InteractSpawner::LevelType nextLevel;
+
+		switch (currentLevel)
+		{
+		case InteractSpawner::LevelType::Level1:
+			nextLevel = InteractSpawner::LevelType::Level2;
+			break;
+		default:
+			nextLevel = InteractSpawner::LevelType::Level1;
+			break;
+		}
+
+		ItemSpawner->LoadLevel(nextLevel);
+
+		if (MainPlayer)
+		{
+			MainPlayer->SetPosition(100.0f, 100.0f); //플레이어 시작 위치로 이동
+			MainPlayer->ResetKeys(); //플레이어가 가진 열쇠 초기화
+		}
+	}
+}
+
+void GameManager::ReloadCurrentLevel()
+{
+	if (ItemSpawner)
+	{
+		ItemSpawner->ResetLevel();
+
+		if (MainPlayer)
+		{
+			MainPlayer->SetPosition(100.0f, 100.0f); //플레이어 시작 위치로 이동
+			MainPlayer->ResetKeys(); //플레이어가 가진 열쇠 초기화
+		}
+	}
+}
+
+void GameManager::UpdatePalyerKeyInventory()
+{
+	if (MainPlayer && KeyInventory)
+	{
+		const std::vector<int>& playerKeys = MainPlayer->GetOwnedKeys();
+		KeyInventory->UpdateInventory(playerKeys);
+	}
 }

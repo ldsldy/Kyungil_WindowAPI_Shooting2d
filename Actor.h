@@ -49,6 +49,10 @@ public:
 		return GetComponent<T>() != nullptr;
 	}
 
+	//지면 충돌 처리
+	virtual void OnGroundCollision() {}
+	virtual void OnGroundLeft() {};
+
 	//Getter
 	inline const PointF& GetPosition() const { return Position; }
 	inline int GetSize() const { return Size; }

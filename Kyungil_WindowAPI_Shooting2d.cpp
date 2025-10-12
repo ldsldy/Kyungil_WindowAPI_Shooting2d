@@ -54,7 +54,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_KYUNGILWINDOWAPISHOOTING2D));  //h : handle
 
     MSG msg;
-	ULONGLONG LastTime = GetTickCount64(); //GetTickCount64() : 시스템이 시작된 후 경과된 시간을 밀리초 단위로 반환
+
+	LARGE_INTEGER Frequency, LastTime, CurrentTime; //초당 틱 수
+	QueryPerformanceCounter(&LastTime); //현재 틱 수
+	QueryPerformanceFrequency(&Frequency); //초당 틱 수
 
     //메시지 루프
     //기본 메시지 루프
@@ -73,10 +76,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             }
         }
 
-        ULONGLONG CurrentTime = GetTickCount64();
-		float DeltaTime = (CurrentTime - LastTime) / 1000.0f; //초 단위로 변환
-        LastTime = CurrentTime;
-        
+		QueryPerformanceCounter(&CurrentTime);
+		float DeltaTime = static_cast<float>(CurrentTime.QuadPart - LastTime.QuadPart) / Frequency.QuadPart;
+		LastTime = CurrentTime;
+
+        std::wstring deltaTimeMessage =
+            L"DeltaTime: " + std::to_wstring(DeltaTime) +
+            L"s, FPS: " + std::to_wstring(1.0f / DeltaTime) + L"\n";
+        OutputDebugString(deltaTimeMessage.c_str());
+
         GameManager::Get().Tick(DeltaTime);
 
         InvalidateRect(GameManager::Get().GetMainWindowHandle(),
@@ -154,6 +162,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   GameManager::Get().SetMainWindowHandle(hWnd); //게임 매니저에 윈도우 핸들 설정
    ShowWindow(hWnd, nCmdShow);  //윈도우 출력
    UpdateWindow(hWnd);          //윈도우 업데이트(화면 갱신)
 
@@ -195,7 +204,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         GameManager::Get().Render();
 		Gdiplus::Graphics GraphicsInstance(hdc); //hdc에 그리기 위한 도구
 		GraphicsInstance.DrawImage(GameManager::Get().GetBackBuffer(), 0, 0); //백버퍼 이미지를 화면에 그림
-
+        
         EndPaint(hWnd, &ps);
     }
     break;

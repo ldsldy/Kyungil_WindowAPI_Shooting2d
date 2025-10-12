@@ -12,47 +12,81 @@ void Player::OnInitialize()
     WidthSize = (Image->GetWidth())/3;
 	HeightSize = (Image->GetHeight())/3;
 
+	// 키 입력 상태 초기화
     KeyWasPressedMap[InputDirection::Up] = false;
     KeyWasPressedMap[InputDirection::Down] = false;
     KeyWasPressedMap[InputDirection::Left] = false;
     KeyWasPressedMap[InputDirection::Right] = false;
 
+	//물리 컴포넌트 추가
     PhysicsComponent* physicsComponent = new PhysicsComponent(this, CollisionType::Circle, PhysicsLayer::Player);
 	//가능하면 Ellipse로 바꾸기
     physicsComponent->SetRadius(static_cast<float>(HeightSize * 0.5f));
     AddComponent(physicsComponent);
+
+	//이동 컴포넌트 추가
+	MoveComponent* moveComponent = new MoveComponent(this);
+	moveComponent->SetGravity(980.0f); //중력 설정
+    moveComponent->SetIsOnGround(false);
+	AddComponent(moveComponent);
 }
 
 void Player::OnTick(float InDeltaTime)
 {
-    float MoveDistance = InDeltaTime * Speed;
+    HandleInput();
+
+    UpdateMovement(InDeltaTime);
+}
+
+void Player::HandleInput()
+{
+	MoveComponent* moveComp = GetComponent<MoveComponent>();
+    if (!moveComp) return;
+
+	//수평 이동
     if (KeyWasPressedMap[InputDirection::Left])
     {
-        Position.X -= MoveDistance;
+        moveComp->MoveHorizontal(-Speed);
     }
     if (KeyWasPressedMap[InputDirection::Right])
     {
-        Position.X += MoveDistance;
-	}
-    if (KeyWasPressedMap[InputDirection::Up])
-    {
-        Position.Y -= MoveDistance;
+        moveComp->MoveHorizontal(+Speed);
     }
- //   if(KeyWasPressedMap[InputDirection::Down])
- //   {
- //       
-	//}
+    else
+    {
+		moveComp->MoveHorizontal(0.0f);
+    }
 
-    if (Position.X < (0 - WidthSize * 0.5f))
+	bool IsPressedUp = KeyWasPressedMap[InputDirection::Up];
+
+    if (IsPressedUp)
     {
-        Position.X = 0;
+		moveComp->AddVeriticalImpulse(JumpImpulse);
     }
-    else if ((GameManager::ScreenWidth + WidthSize * 0.5f) < Position.X)
-    {
-        Position.X= GameManager::ScreenWidth + WidthSize * 0.5f;
-    }
-    //y가 0아래면 사망판정 추가
 }
+
+void Player::UpdateMovement(float InDeltaTime)
+{
+	MoveComponent* moveComp = GetComponent<MoveComponent>();
+    if (!moveComp) return;
+
+	PointF NextPos = moveComp->CalculateNextPosition(InDeltaTime);
+	PointF CurrentVel = moveComp->GetVelocity();
+
+    // Floor_Block과의 충돌 검사
+    bool IsGrounded = false;
+    float GroundY = NextPos.Y;
+
+	//GameManager에서 모든 Floor_Block 액터를 가져와서 충돌 검사
+	PhysicsComponent* playerPhysics = GetComponent<PhysicsComponent>();
+    if (playerPhysics)
+    {
+
+    }
+
+
+}
+
 void Player::OnRender(Gdiplus::Graphics* InGraphics)
 {
     if (!InGraphics) return;
@@ -103,6 +137,24 @@ void Player::OnOverlap(Actor* InOther)
     // 다른 아이템과 겹쳤을 때 처리
 }
 
+void Player::OnGroundCollision()
+{
+    MoveComponent* moveComp = GetComponent<MoveComponent>();
+    if (moveComp)
+    {
+        moveComp->SetIsOnGround(true);
+		moveComp->ResetVerticalVelocity();
+	}
+}
+
+void Player::OnGroundLeft()
+{
+    MoveComponent* moveComp = GetComponent<MoveComponent>();
+    if (moveComp)
+    {
+        moveComp->SetIsOnGround(false);
+	}
+}
 void Player::PickupKey(Key* key)
 {
     if (key)
@@ -127,9 +179,10 @@ void Player::AddKey(int KeyId)
 			return; //이미 소유한 열쇠면 오류
         }
     }
-
 	//새로운 열쇠 추가
 	OwnedKeys.push_back(KeyId);
+
+	GameManager::Get().UpdatePalyerKeyInventory();
 }
 
 bool Player::HasKey(int KeyId)

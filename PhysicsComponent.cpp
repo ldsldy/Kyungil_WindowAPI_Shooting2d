@@ -1,5 +1,105 @@
 #include "PhysicsComponent.h"
 #include "Actor.h"
+#include "GameManager.h"
+
+
+void PhysicsComponent::OnTick(float InDeltaTime)
+{
+    if(bCanMove)
+    {
+        UpdatePhysics(InDeltaTime);
+	}
+}
+
+void PhysicsComponent::UpdatePhysics(float InDeltaTime)
+{
+    if (!Owner) return;
+
+	//중력 적용
+	ApplyGravity(InDeltaTime);
+
+	//다음 위치 계산
+    PointF NextPos = CalculateNextPosition(InDeltaTime);
+
+	//바닥 충돌 검사
+	CheckFloorCollision(InDeltaTime);
+
+	//위치 업데이트
+	PointF FinalPos = CalculateNextPosition(InDeltaTime);
+	Owner->SetPosition(FinalPos.X, FinalPos.Y);
+}
+
+void PhysicsComponent::ApplyGravity(float InDeltaTime)
+{
+    //바닥에	닿지 않았다면 중력 적용
+    if (!IsOnGround)
+    {
+        Velocity.Y += GravityAcceleration * InDeltaTime;
+    }
+    else
+    {
+        Velocity.Y = 0.0f;
+    }
+}
+
+void PhysicsComponent::CheckFloorCollision(float InDeltaTime)
+{
+	PointF NextPos = CalculateNextPosition(InDeltaTime);
+
+	bool FoundGround = false;
+	float GroundY = NextPos.Y;
+
+	const auto& floorBlocks = GameManager::Get().GetFloorComponents();
+
+    for (auto& floor : floorBlocks)
+    {
+        if (this->IsCollision(floor))
+        {
+            FloorBlock* floorBlock = dynamic_cast<FloorBlock*>(floor->GetOwner());
+            if (floorBlock && floorBlock->CanLandOn(NextPos, Velocity))
+            {
+                float ThisGroundY = floorBlock->GetTopY();
+                if (!FoundGround || ThisGroundY < GroundY)
+                {
+                    FoundGround = true;
+                    GroundY = ThisGroundY;
+                }
+			}
+        }
+    }
+
+    // 바닥과 충돌 결과 적용
+    if (FoundGround)
+    {
+        if (!IsOnGround)
+        {
+			//바닥에 처음 닿았을 때
+            if (OnGroundHitCallback)
+            {
+				OnGroundHitCallback();
+            }
+        }
+        SetIsOnGround(true);
+        ResetVerticalVelocity();
+     
+        //위치 조정
+        PointF CurrentPos = Owner->GetPosition();
+        Owner->SetPosition(CurrentPos.X, GroundY);
+    }
+    else
+    {
+        if (IsOnGround) 
+        {
+            //바닥에서 벗어났을 때
+            if (OnGroundLeftCallback)
+            {
+				OnGroundLeftCallback();
+            }
+        }
+		SetIsOnGround(false);
+    }
+}
+
 
 bool PhysicsComponent::IsCollision(PhysicsComponent* InOther) const
 {
@@ -31,6 +131,7 @@ bool PhysicsComponent::IsCollision(PhysicsComponent* InOther) const
 
     return Result;
 }
+
 
 bool PhysicsComponent::CheckCircleToCircleCollision(const PhysicsComponent* InFrom, const PhysicsComponent* InTo)
 {

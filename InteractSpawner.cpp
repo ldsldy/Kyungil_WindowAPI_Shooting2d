@@ -1,5 +1,6 @@
 #include "InteractSpawner.h"
 #include "Key.h"
+#include "Factory.h"
 
 void InteractSpawner::OnInitialize()
 {
@@ -79,6 +80,31 @@ void InteractSpawner::LoadLevel(LevelType InLevel)
 	//새 레벨의 정보 불러오기
 	CurrentLevelType = InLevel;
 	LoadSpawnData(GetLevelData(InLevel));
+	SpawnAllItems();
+}
+
+void InteractSpawner::ResetLevel()
+{
+	//생성된 모든 액터들을 삭제
+	for(Actor* item: CreatedItems)
+	{
+		if (item)
+		{
+			item->DestroyActor();
+		}
+	}
+	CreatedItems.clear();
+
+	//현재 레벨 다시 로드
+	for(auto& spawnInfo: ItemSpawnData)
+	{
+		Actor* newActor = CreateItemActorWithFactory(spawnInfo);
+		if (newActor)
+		{
+			CreatedItems.push_back(newActor);
+		}
+	}
+
 	SpawnAllItems();
 }
 

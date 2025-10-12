@@ -1,16 +1,18 @@
 #pragma once
-#include <Windows.h>
-#include <vector>
-#include <set>
-#include <map>
 #include "Common.h"
 #include "PhysicsComponent.h"
 #include "Actor.h"
 #include "Player.h"
 #include "Singleton.h"
-#include "TimerUI.h"
-#include "InteractSpawner.h"
+#include "KeyInventoryUI.h"
 #include "ItemInfo.h"
+#include "InteractSpawner.h"
+#include "MoveComponent.h"
+
+#include <Windows.h>
+#include <vector>
+#include <set>
+#include <map>
 
 class GameManager:public Singleton<GameManager>
 {
@@ -48,6 +50,7 @@ public:
 	inline const HWND GetMainWindowHandle() const { return hMainWindow; }
 	inline const Point& GetAppPosition() const { return AppPosition; }
 	inline Gdiplus::Bitmap* GetBackBuffer() const { return BackBuffer; }
+	inline std::vector<PhysicsComponent*>& GetFloorComponents() { return PhysicsComponents[PhysicsLayer::FloorBlock]; }
 
 	//Setter
 	inline void SetMainWindowHandle(HWND InWindowHandle) {
@@ -57,6 +60,10 @@ public:
 		}
 	}
 	inline void SetGameState(GameState InState) { State = InState; }
+
+	//플레이어의 키 인벤토리 UI 갱신
+	void UpdatePalyerKeyInventory();
+
 protected:
 private:
 	GameManager() = default;
@@ -69,11 +76,13 @@ private:
 	void ProcessCollisions();				//충돌 처리
 	void ProcessPendingDestroyActors();		//파괴 예정 액터 처리
 
+	bool CheckFloorCollision(const PointF& NextPos, const PointF& velocity, float OutGroundY); //지면 충돌 체크
+	
 	//다음 레벨 로드
 	void LoadNextLevel();
 	//현재 레벨 다시로드
 	void ReloadCurrentLevel();
-
+	 
 	//=======================================================================
 	///								변수
 	//============================================== ========================
@@ -88,7 +97,7 @@ private:
 
 	Player* MainPlayer = nullptr;			//플레이어 캐릭터
 	InteractSpawner* ItemSpawner = nullptr;         //아이템 생성기
-	TimerUI* Timer = nullptr;                //타이머 UI
+	KeyInventoryUI* KeyInventory = nullptr; //열쇠 인벤토리 UI
 
 	//TestGridActor* TestGrid = nullptr;      //위치 확인을 위한 테스트용 그리드
 
