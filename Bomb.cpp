@@ -21,16 +21,6 @@ void Bomb::OnTick(float deltaTime)
 {
 	Actor::OnTick(deltaTime); //부모 클래스의 OnTick 호출
 	
-	//dropSpeed += dropAcceleration * deltaTime; //낙하 속도 갱신
-
-	//Position.Y += dropSpeed * deltaTime;
-	//lifeTime -= deltaTime;
-
-	////화면 밖으로 나가거나 수명이 다하면 삭제
-	//if(Position.Y > GameManager::ScreenHeight+Size || lifeTime <= 0.0f)
-	//{
-	//	DestroyActor();
-	//}
 
 	//폭탄이 터질려 한다면
 	if (IsCatchedFire == true)
@@ -52,3 +42,17 @@ void Bomb::OnOverlap(Actor* other)
 		DestroyActor();
 	}
 }
+
+
+
+
+//dropSpeed += dropAcceleration * deltaTime; //낙하 속도 갱신
+
+//Position.Y += dropSpeed * deltaTime;
+//lifeTime -= deltaTime;
+
+////화면 밖으로 나가거나 수명이 다하면 삭제
+//if(Position.Y > GameManager::ScreenHeight+Size || lifeTime <= 0.0f)
+//{
+//	DestroyActor();
+//}

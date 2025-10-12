@@ -17,11 +17,14 @@ enum class RenderLayer : uint8_t
 	Player,
 	Enemy,
 	Bomb,
-	Button,
-	Key,
 	UI,
 	Test,
-	Misc
+	Misc,
+	Key,
+	//FloorBlock,
+	//JumpBlock,
+	//ExitBlock,
+	//Gem
 };
 
 enum class ResourceID : uint8_t
@@ -40,6 +43,10 @@ enum class ResourceID : uint8_t
 	Number7,
 	Number8,
 	Number9,
+	Key_Red,
+	Key_Blue,
+	Key_Yellow,
+	Key_Green,
 	Dot,
 	Test,
 };
@@ -56,9 +63,21 @@ enum class PhysicsLayer
 	Player,
 	Bomb,
 	Key,
-	Keyhole,
-	Block,
+	Gem,
+	JumBlock,
+	KeyBlock,
+	FloorBlock,
 	Exit
+};
+
+enum class ItemType : uint8_t
+{
+	Key = 0,
+	Gem,
+	JumpBlock,
+	ExitBlock,
+	KeyBlock,
+	FloorBlock
 };
 
 enum class GameState

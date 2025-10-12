@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "Common.h"
 #include "GameManager.h"
+#include "Key.h"
+#include <string>
 
 void Player::OnInitialize()
 {
@@ -36,6 +38,10 @@ void Player::OnTick(float InDeltaTime)
     {
         Position.Y -= MoveDistance;
     }
+ //   if(KeyWasPressedMap[InputDirection::Down])
+ //   {
+ //       
+	//}
 
     if (Position.X < (0 - WidthSize * 0.5f))
     {
@@ -89,17 +95,63 @@ void Player::OnRender(Gdiplus::Graphics* InGraphics)
 void Player::OnOverlap(Actor* InOther)
 {
     OutputDebugString(L"Player::OnOverlap called\n");
-    if (InOther && InOther != this)
+	Key* key = dynamic_cast<Key*>(InOther);
+    if (key && InOther != this)
     {
-        //게임 오버 처리 -> hp-1로 변경(예정)
-        GameManager::Get().SetGameState(GameState::GameOver);
+        PickupKey(key);
+    }
+    // 다른 아이템과 겹쳤을 때 처리
+}
+
+void Player::PickupKey(Key* key)
+{
+    if (key)
+    {
+		int KeyId = key->GetKeyId();
+		key->OnPlayerGetKey(); //열쇠 획득 처리
+		AddKey(KeyId); //플레이어가 열쇠를 소유하게 함
+
+		//디버그 메시지 출력
+        std::wstring message = L"키 " + std::to_wstring(key->GetKeyId()) + L" 획득.\n";
+        OutputDebugString(message.c_str());
     }
 }
 
+void Player::AddKey(int KeyId)
+{
+    for (int ownedKey : OwnedKeys)
+    {
+        if (ownedKey == KeyId)
+        {
+            OutputDebugString(L"오류!, 이미 소유한 키입니다.\n");
+			return; //이미 소유한 열쇠면 오류
+        }
+    }
+
+	//새로운 열쇠 추가
+	OwnedKeys.push_back(KeyId);
+}
+
+bool Player::HasKey(int KeyId)
+{
+    for(int ownedKey : OwnedKeys)
+    {
+        if (ownedKey == KeyId)
+        {
+            return true; //소유한 열쇠면 true 반환
+        }
+	}
+    return false;
+}
+
+void Player::ResetKeys()
+{
+    OwnedKeys.clear();
+}
 
 void Player::HandleKeyState(WPARAM InKey, bool InIsPressed)
 {
-    if (InKey == VK_LEFT || InKey == VK_RIGHT||InKey == VK_UP)
+    if (InKey == VK_LEFT || InKey == VK_RIGHT||InKey == VK_UP||InKey == VK_DOWN)
     {
         KeyWasPressedMap[static_cast<InputDirection>(InKey)] = InIsPressed;
     }

@@ -8,8 +8,9 @@
 #include "Actor.h"
 #include "Player.h"
 #include "Singleton.h"
-#include "BombSpawner.h"
 #include "TimerUI.h"
+#include "InteractSpawner.h"
+#include "ItemInfo.h"
 
 class GameManager:public Singleton<GameManager>
 {
@@ -39,6 +40,7 @@ public:
 	static constexpr unsigned int ScreenHeight = 960;
 	//static constexpr unsigned int ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 	//static constexpr unsigned int ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+	
 	//액터 기본 크기(픽셀 사이즈)
 	static constexpr unsigned int ActorDefaultSize = 64;
 
@@ -60,10 +62,21 @@ private:
 	GameManager() = default;
 	virtual ~GameManager() = default;
 
+	//============================================== ====================
+	///								함수
+	//===================================================================
 	void UnregisteActor(Actor* InActor);	//액터를 게임 매니저에서 등록 해제
 	void ProcessCollisions();				//충돌 처리
 	void ProcessPendingDestroyActors();		//파괴 예정 액터 처리
 
+	//다음 레벨 로드
+	void LoadNextLevel();
+	//현재 레벨 다시로드
+	void ReloadCurrentLevel();
+
+	//=======================================================================
+	///								변수
+	//============================================== ========================
 	std::map<RenderLayer, std::set<Actor*>> Actors; //RenderLayer별로 Actor들을 관리하는 맵
 	std::vector<Actor*> PendingDestroyActors;		//파괴 예정 액터들을 관리하는 벡터(이번 프레임에 삭제 요청이 들어온 액터들)
 	std::map<PhysicsLayer, std::vector<PhysicsComponent*>> PhysicsComponents; //물리 컴포넌트 리스트
@@ -74,11 +87,14 @@ private:
 	Gdiplus::Graphics* BackBufferGraphics = nullptr; //백버퍼에 그리기 위한 도구
 
 	Player* MainPlayer = nullptr;			//플레이어 캐릭터
-	BombSpawner* Spawner = nullptr;         //폭탄 생성기
+	InteractSpawner* ItemSpawner = nullptr;         //아이템 생성기
 	TimerUI* Timer = nullptr;                //타이머 UI
 
 	//TestGridActor* TestGrid = nullptr;      //위치 확인을 위한 테스트용 그리드
 
 	GameState State = GameState::Playing;   //게임 상태
+
+	bool IsLevelCompleted = false;  //레벨 완료 여부
+	float InLevelTimer = 0.0f; //레벨 진행 시간
 };
 
