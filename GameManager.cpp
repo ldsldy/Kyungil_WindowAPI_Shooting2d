@@ -22,7 +22,7 @@ void GameManager::Initialize()
 	Factory::Get().SpawnActor<Background>(ResourceID::Background, RenderLayer::Background);
 	//TestGrid = Factory::Get().SpawnActor<TestGridActor>(ResourceID::None, RenderLayer::Test);
 
-	Spawner = Factory::Get().SpawnActor<BombSpawner>(ResourceID::None);
+	ItemSpawner = Factory::Get().SpawnActor<InteractSpawner>(ResourceID::None, RenderLayer::Misc);
 	Timer = Factory::Get().SpawnActor<TimerUI>(ResourceID::None, RenderLayer::UI);
 }
 
@@ -30,7 +30,7 @@ void GameManager::Destroy()
 {
 	//생성했던 모든 것들을 정리
 	Timer = nullptr;
-	Spawner = nullptr;
+	ItemSpawner = nullptr;
 	MainPlayer = nullptr;
 	//TestGrid = nullptr;
 
@@ -139,13 +139,16 @@ void GameManager::ProcessCollisions()
 
 	//플레이어가 모든 폭탄과 충돌하는지만 확인
 	//확인 할 때는 콜리전 타입에 따라 처리(원과 원, 원과 사각형, 사각형과 사각형 총 3가지 케이스)
-	for (auto& bomb : PhysicsComponents[PhysicsLayer::Bomb])
+	for (auto& key : PhysicsComponents[PhysicsLayer::Key])
 	{
-		if (player->IsCollision(bomb)) //플레이어와 폭탄 간의 충돌 확인
+		if (player->IsCollision(key)) //플레이어와 폭탄 간의 충돌 확인
 		{
+			Key* nkey = dynamic_cast<Key*>(key->GetOwner());
+			if (nkey)
+				MainPlayer->OnOverlap(nkey);
 			//충돌 발생 시 플레이어와 폭탄의 OnOverlap 호출
-			player->GetOwner()->OnOverlap(bomb->GetOwner());
-			bomb->GetOwner()->OnOverlap(player->GetOwner());
+	/*		player->GetOwner()->OnOverlap(key->GetOwner());
+			key->GetOwner()->OnOverlap(player->GetOwner());*/
 		}
 	}
 }

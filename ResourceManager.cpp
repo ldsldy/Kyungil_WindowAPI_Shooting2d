@@ -7,6 +7,10 @@ void ResourceManager::Initialize()
 	LoadResourceFromFile(ResourceID::Player, L"./Images/Player/Player.png");
 	LoadResourceFromFile(ResourceID::Background, L"./Images/Background/Background.png");
 	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/Bomb.png");
+	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_blue.png");
+	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_green.png");
+	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_red.png");
+	LoadResourceFromFile(ResourceID::Bomb, L"./Images/Interactable/key_yellow.png");
 	LoadResourceFromFile(ResourceID::Number0, L"./Images/UI/hud0.png");
 	LoadResourceFromFile(ResourceID::Number1, L"./Images/UI/hud1.png");
 	LoadResourceFromFile(ResourceID::Number2, L"./Images/UI/hud2.png");

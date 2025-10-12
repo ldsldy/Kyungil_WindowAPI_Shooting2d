@@ -72,9 +72,6 @@
     <ClInclude Include="Bomb.h">
       <Filter>Actor\Bomb</Filter>
     </ClInclude>
-    <ClInclude Include="BombSpawner.h">
-      <Filter>Actor\Spawner</Filter>
-    </ClInclude>
     <ClInclude Include="Common.h">
       <Filter>Commons</Filter>
     </ClInclude>
@@ -108,6 +105,12 @@
     <ClInclude Include="Key.h">
       <Filter>Actor\Items</Filter>
     </ClInclude>
+    <ClInclude Include="InteractSpawner.h">
+      <Filter>Actor\Spawner</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemInfo.h">
+      <Filter>Actor\Items</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Kyungil_WindowAPI_Shooting2d.cpp">
@@ -121,9 +124,6 @@
     </ClCompile>
     <ClCompile Include="Bomb.cpp">
       <Filter>Actor\Bomb</Filter>
-    </ClCompile>
-    <ClCompile Include="BombSpawner.cpp">
-      <Filter>Actor\Spawner</Filter>
     </ClCompile>
     <ClCompile Include="PhysicsComponent.cpp">
       <Filter>Component</Filter>
@@ -145,6 +145,9 @@
     </ClCompile>
     <ClCompile Include="Key.cpp">
       <Filter>Actor\Items</Filter>
+    </ClCompile>
+    <ClCompile Include="InteractSpawner.cpp">
+      <Filter>Actor\Spawner</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

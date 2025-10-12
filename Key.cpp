@@ -26,3 +26,10 @@ void Key::OnOverlap(Actor* other)
 		OutputDebugString(L"Key::OnOverlap called\n");
 	}
 }
+
+void Key::OnPlayerGetKey()
+{
+		//ø≠ºË »πµÊ √≥∏Æ
+		OutputDebugString(L"Player has obtained the key!\n");
+		DestroyActor(); //ø≠ºË ªË¡¶
+}
