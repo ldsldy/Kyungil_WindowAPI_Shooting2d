@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Arrows PNG Exporter (Transparent)</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; color: #111; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+  .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; width: 220px; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  label { font-size: 14px; }
+  input { width: 80px; padding: 4px 6px; }
+  button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  button:hover { background: #f6f6f6; }
+  canvas { width: 196px; height: 196px; border: 1px dashed #e0e0e0; border-radius: 8px; background: transparent; display: block; margin-bottom: 8px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .muted { color: #666; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>Arrows PNG Exporter (Transparent)</h1>
+  <p class="muted">투명 배경(alpha=0) PNG를 다운로드하세요. 크기와 선 두께를 바꾼 뒤 “Redraw” → “Download all”.</p>
+
+  <div class="controls">
+    <label>Size(px): <input type="number" id="size" value="256" min="32" step="1"></label>
+    <label>Stroke(px): <input type="number" id="stroke" value="20" min="1" step="1"></label>
+    <label>Export scale: <input type="number" id="scale" value="1" min="0.25" step="0.25"></label>
+    <button id="redraw">Redraw</button>
+    <button id="download-all">Download all</button>
+  </div>
+
+  <div class="row" id="cards"></div>
+
+<script>
+(function(){
+  const defs = [
+    { key: 'arrow_up',    title: 'Arrow Up',    draw: drawUp },
+    { key: 'arrow_down',  title: 'Arrow Down',  draw: drawDown },
+    { key: 'arrow_left',  title: 'Arrow Left',  draw: drawLeft },
+    { key: 'arrow_right', title: 'Arrow Right', draw: drawRight },
+    { key: 'center',      title: 'Center Dot',  draw: drawCenter },
+  ];
+
+  const cardsEl = document.getElementById('cards');
+  const sizeEl = document.getElementById('size');
+  const strokeEl = document.getElementById('stroke');
+  const scaleEl = document.getElementById('scale');
+  const redrawBtn = document.getElementById('redraw');
+  const dlAllBtn = document.getElementById('download-all');
+
+  function createCards() {
+    cardsEl.innerHTML = '';
+    defs.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3>${d.title}</h3>
+        <canvas></canvas>
+        <div class="actions">
+          <button class="dl">Download</button>
+        </div>
+        <div class="muted">${d.key}.png</div>
+      `;
+      cardsEl.appendChild(card);
+    });
+  }
+
+  function drawAll() {
+    const size = Math.max(1, parseInt(sizeEl.value || '256', 10));
+    const stroke = Math.max(1, parseInt(strokeEl.value || '20', 10));
+    const scale = Math.max(0.1, parseFloat(scaleEl.value || '1'));
+
+    const cardNodes = Array.from(cardsEl.querySelectorAll('.card'));
+    cardNodes.forEach((card, i) => {
+      const { key, draw } = defs[i];
+      const canvas = card.querySelector('canvas');
+      // Physical pixels for export quality
+      canvas.width = Math.round(size * scale);
+      canvas.height = Math.round(size * scale);
+      canvas.style.width = '196px';
+      canvas.style.height = '196px';
+
+      const ctx = canvas.getContext('2d');
+      // Transparent background by default (no painting)
+      ctx.save();
+      ctx.scale(scale, scale);
+
+      // Common stroke style
+      ctx.lineWidth = stroke;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = '#ffffff';
+
+      draw(ctx, size);
+
+      ctx.restore();
+
+      const btn = card.querySelector('.dl');
+      btn.onclick = () => downloadCanvas(canvas, key + '.png');
+    });
+  }
+
+  // Shapes replicate the earlier SVG coordinates at 256x256.
+  function drawUp(ctx, size) {
+    const s = size/256;
+    polyline(ctx, [
+      [96*s, 100*s], [128*s, 68*s], [160*s, 100*s]
+    ]);
+  }
+  function drawDown(ctx, size) {
+    const s = size/256;
+    polyline(ctx, [
+      [96*s, 156*s], [128*s, 188*s], [160*s, 156*s]
+    ]);
+  }
+  function drawLeft(ctx, size) {
+    const s = size/256;
+    polyline(ctx, [
+      [100*s, 96*s], [68*s, 128*s], [100*s, 160*s]
+    ]);
+  }
+  function drawRight(ctx, size) {
+    const s = size/256;
+    polyline(ctx, [
+      [156*s, 96*s], [188*s, 128*s], [156*s, 160*s]
+    ]);
+  }
+  function drawCenter(ctx, size) {
+    const s = size/256;
+    polygon(ctx, [
+      [128*s, 116*s], [140*s, 128*s], [128*s, 140*s], [116*s, 128*s]
+    ]);
+  }
+
+  function polyline(ctx, pts) {
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.stroke();
+  }
+  function polygon(ctx, pts) {
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function downloadCanvas(canvas, filename) {
+    const url = canvas.toDataURL('image/png'); // preserves transparency
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  createCards();
+  drawAll();
+
+  redrawBtn.addEventListener('click', drawAll);
+  dlAllBtn.addEventListener('click', () => {
+    const canvases = Array.from(cardsEl.querySelectorAll('canvas'));
+    canvases.forEach((c, i) => downloadCanvas(c, defs[i].key + '.png'));
+  });
+})();
+</script>
+</body>
+</html>
